@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"oss/g"
+	"oss/rpc"
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -19,14 +22,26 @@ type ossInfo struct {
 }
 
 func main() {
-	fmt.Println("Hello, World!")
-	uri := "http://cloud.leimans.com/upload/params"
+	cfg := flag.String("c", "oss/cfg.json", "configuration file")
+	version := flag.Bool("v", false, "show version")
+
+	flag.Parse()
+	if *version {
+		fmt.Println(g.VERSION)
+		os.Exit(0)
+	}
+
+	g.ParseConfig(*cfg)
+	if g.Config().Debug {
+		g.InitLog("debug")
+	} else {
+		g.InitLog("info")
+	}
+
+	fmt.Println("the config uri is:", g.Config().OssUri)
+	uri := g.Config().OssUri
 	req := httplib.Get(uri).SetTimeout(5*time.Second, 30*time.Second)
 	fmt.Println(req)
-
-	resp, e := req.String()
-	fmt.Println(resp)
-	fmt.Println(e)
 
 	var oss_info ossInfo
 	err := req.ToJson(&oss_info)
@@ -39,12 +54,8 @@ func main() {
 	Endpoint := "oss-cn-shenzhen.aliyuncs.com"
 	BucketName := "res-leimans-com-1"
 	keyPrefix := "user_game_data/"
+
 	// 创建OSSClient实例。
-
-	//client, err := oss.New(Endpoint, "<yourAccessKeyId>", "<yourAccessKeySecret>")
-	//client, err := oss.New(Endpoint, oss_info.AccessKeyId, oss_info.AccessKeySecret)
-	//client, err := oss.New(Endpoint, oss_info.AccessKeyId, oss_info.AccessKeySecret, oss_info.SecurityToken)
-
 	client, err := oss.New(Endpoint, oss_info.AccessKeyId, oss_info.AccessKeySecret, oss.SecurityToken(oss_info.SecurityToken))
 	if err != nil {
 		fmt.Println("Error 1:", err)
@@ -61,12 +72,14 @@ func main() {
 
 	// 下载文件到本地文件。
 	//err = bucket.GetObjectToFile("<yourObjectName>", "LocalFile")
-	//err = bucket.GetObjectToFile(keyPrefix+"10833_10111.7z", "F:/1081.7z")
-	err = bucket.GetObjectToFile(keyPrefix+"10833_10111_20200710_110541.7z", "F:/1082.7z")
+	err = bucket.GetObjectToFile(keyPrefix+"10833_10111.7z", "F:/1081.7z")
+	//err = bucket.GetObjectToFile(keyPrefix+"10833_10111_20200710_110541.7z", "F:/1083.7z")
 	if err != nil {
 		fmt.Println("Error 3:", err)
 		os.Exit(-1)
 	}
+
+	go rpc.StartRpc()
 
 	select {}
 }

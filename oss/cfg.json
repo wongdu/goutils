@@ -1,0 +1,11 @@
+{
+    "debug": true,
+    "oss_uri": "http://cloud.leimans.com/upload/params",
+    "endpoint": "oss-cn-shenzhen.aliyuncs.com",
+    "bucket_name": "res-leimans-com-1",
+    "object_prefix": "user_game_data/",
+    "rpc": {
+        "enabled": true,
+        "listen": "0.0.0.0:7877"
+    }
+}
