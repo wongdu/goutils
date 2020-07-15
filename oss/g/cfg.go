@@ -13,7 +13,7 @@ import (
 
 type RpcConfig struct {
 	Enabled bool   `json:"enabled"`
-	Listen  string `json:"listen"`
+	Port    string `json:"port"`
 }
 
 type GlobalConfig struct {

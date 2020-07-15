@@ -6,6 +6,6 @@
     "object_prefix": "user_game_data/",
     "rpc": {
         "enabled": true,
-        "listen": "0.0.0.0:7877"
+        "port": "7877"
     }
 }

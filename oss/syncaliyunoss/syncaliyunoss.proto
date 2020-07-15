@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package syncaliyunoss;
+
+service SyncAliyunOssFile {
+rpc SyncOssFile (AliyunOssRequest) returns (AliyunOssReply) {}
+}
+
+message AliyunOssRequest {
+string endpoint = 1;
+string bucket_name = 2;
+string object_name_prefix = 3;
+string file_name = 4;
+string md5sum_value = 5;
+int64 timestamp= 6;
+}
+
+message AliyunOssReply {
+string message = 1;
+int32 errCode= 6;
+}

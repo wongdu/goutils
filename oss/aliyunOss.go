@@ -4,25 +4,40 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"oss/g"
-	"oss/rpc"
-	"time"
+	"oss/syncaliyunoss"
+	"runtime/debug"
+	"syscall"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/toolkits_/httplib"
 	log "github.com/toolkits_/logrus"
 )
 
-type ossInfo struct {
-	StatusCode      int64  `json:"StatusCode"`
-	SecurityToken   string `json:"SecurityToken"`
-	AccessKeyId     string `json:"AccessKeyId"`
-	AccessKeySecret string `json:"AccessKeySecret"`
-	Expiration      string `json:"Expiration"`
+func registerSignal() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE)
+	go func() {
+		for {
+			sig := <-sigs
+			if sig != syscall.SIGPIPE {
+				log.Print(sig, "==============EXIT==============")
+				os.Exit(1)
+			}
+		}
+	}()
 }
 
 func main() {
+	registerSignal()
+	defer func() {
+		if e := recover(); e != nil {
+			log.Print(e)
+			debug.PrintStack()
+			log.Print("==============EXIT==============")
+		}
+	}()
 	cfg := flag.String("c", "oss/cfg.json", "configuration file")
+	//cfg := flag.String("c", "cfg.json", "configuration file")
 	version := flag.Bool("v", false, "show version")
 
 	flag.Parse()
@@ -38,48 +53,12 @@ func main() {
 		g.InitLog("info")
 	}
 
-	fmt.Println("the config uri is:", g.Config().OssUri)
-	uri := g.Config().OssUri
-	req := httplib.Get(uri).SetTimeout(5*time.Second, 30*time.Second)
-	fmt.Println(req)
-
-	var oss_info ossInfo
-	err := req.ToJson(&oss_info)
-	if err != nil {
-		log.Errorf("curl %s fail: %v", uri, err)
-		return
-	}
-	fmt.Println(oss_info)
-
-	Endpoint := "oss-cn-shenzhen.aliyuncs.com"
-	BucketName := "res-leimans-com-1"
-	keyPrefix := "user_game_data/"
-
-	// 创建OSSClient实例。
-	client, err := oss.New(Endpoint, oss_info.AccessKeyId, oss_info.AccessKeySecret, oss.SecurityToken(oss_info.SecurityToken))
-	if err != nil {
-		fmt.Println("Error 1:", err)
-		os.Exit(-1)
+	if g.Config().Rpc.Enabled {
+		go syncaliyunoss.StartRpcServer(g.Config().Rpc.Port)
+		log.Println("start the rpc server...")
 	}
 
-	// 获取存储空间。
-	//bucket, err := client.Bucket("<yourBucketName>")
-	bucket, err := client.Bucket(BucketName)
-	if err != nil {
-		fmt.Println("Error 2:", err)
-		os.Exit(-1)
-	}
-
-	// 下载文件到本地文件。
-	//err = bucket.GetObjectToFile("<yourObjectName>", "LocalFile")
-	err = bucket.GetObjectToFile(keyPrefix+"10833_10111.7z", "F:/1081.7z")
-	//err = bucket.GetObjectToFile(keyPrefix+"10833_10111_20200710_110541.7z", "F:/1083.7z")
-	if err != nil {
-		fmt.Println("Error 3:", err)
-		os.Exit(-1)
-	}
-
-	go rpc.StartRpc()
-
-	select {}
+	quit := make(chan bool)
+	log.Println("synchronise aliyun oss server running...")
+	<-quit
 }
