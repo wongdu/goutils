@@ -1,7 +1,10 @@
 package syncaliyunoss
 
 import (
+	"os"
 	"oss/g"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -42,6 +45,18 @@ func aliyunOssDownload(endpoint, bucket_name, object_name_prefix, file_name, md5
 		return
 	}
 
+	strTimestamp := unixTsFormat(timestamp)
+	strOssFileDate := ossFileDate(strTimestamp)
+	if !checkOssFileDate(strOssFileDate) {
+		log.Errorf("the oss file date %s is invalid", strOssFileDate)
+		return
+	}
+
+	if !checkOssDateDir(strOssFileDate) {
+		log.Errorf("the oss file date directory %s is invalid", g.Config().OssDirectory+strOssFileDate)
+		return
+	}
+
 	// 创建OSSClient实例。
 	client, err := oss.New(endpoint, oss_info.AccessKeyId, oss_info.AccessKeySecret, oss.SecurityToken(oss_info.SecurityToken))
 	if err != nil {
@@ -57,7 +72,7 @@ func aliyunOssDownload(endpoint, bucket_name, object_name_prefix, file_name, md5
 	}
 
 	// 下载文件到本地文件。
-	err = bucket.GetObjectToFile(object_name_prefix+file_name, "F:/1081.7z")
+	err = bucket.GetObjectToFile(object_name_prefix+file_name, g.Config().OssDirectory+strOssFileDate+"/"+file_name)
 	if err != nil {
 		log.Errorf("get the oss file failed: %v", err)
 		return
@@ -77,5 +92,45 @@ func checkAliyunOssRequest(request *AliyunOssRequest) bool {
 		return false
 	}
 
+	return true
+}
+
+func unixTsFormat(ts int64) string {
+	return time.Unix(ts, 0).Format("20060102_150405")
+}
+
+func ossFileDate(strTimestamp string) string {
+	if strTimestamp == "" {
+		return ""
+	}
+	underIdx := strings.Index(strTimestamp, "_")
+	if underIdx == -1 {
+		return ""
+	}
+
+	return strTimestamp[0:underIdx]
+}
+
+func checkOssFileDate(strOssFileDate string) bool {
+	match, err := regexp.Match(`^[1-9]\d{3}(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$`, []byte(strOssFileDate))
+	if err != nil {
+		return false
+	}
+
+	return match
+}
+
+func checkOssDateDir(strOssFileDate string) bool {
+	absDir := g.Config().OssDirectory + strOssFileDate
+	_, err := os.Stat(absDir)
+	if err != nil {
+		log.Printf("the oss file date directory %s is not exits,just create it", absDir)
+		os.Mkdir(absDir, 0777)
+	}
+	fi, err := os.Stat(absDir)
+	if !fi.IsDir() {
+		log.Errorf("the %s is not a valid oss file date directory", absDir)
+		return false
+	}
 	return true
 }

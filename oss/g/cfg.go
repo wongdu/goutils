@@ -22,6 +22,7 @@ type GlobalConfig struct {
 	Endpoint         string     `json:"endpoint"`
 	BucketName       string     `json:"bucket_name"`
 	ObjectNamePrefix string     `json:"object_name_prefix"`
+	OssDirectory     string     `json:"oss_directory"`
 	Rpc              *RpcConfig `json:"rpc"`
 }
 
