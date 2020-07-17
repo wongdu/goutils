@@ -15,8 +15,6 @@ import (
 
 type RpcServer struct{}
 
-
-
 func (s *RpcServer) SyncOssFile(ctx context.Context, request *AliyunOssRequest) (response *AliyunOssReply, err error) {
 	log.Println("SyncOssFile get the request str is:", request.String())
 
