@@ -5,6 +5,7 @@
     "bucket_name": "res-leimans-com-1",
     "object_prefix": "user_game_data/",
     "oss_directory": "F:/oss",
+    "objectNamePrefix": [ "user_game_data","userheader"],
     "rpc": {
         "enabled": true,
         "port": "7877"

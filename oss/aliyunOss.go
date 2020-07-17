@@ -7,11 +7,13 @@ import (
 	"os/signal"
 	"oss/g"
 	"oss/syncaliyunoss"
+	"oss/utils"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"syscall"
 
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	log "github.com/toolkits_/logrus"
 )
 
@@ -29,26 +31,6 @@ func registerSignal() {
 	}()
 }
 
-func checkOssDirectory(dirName string) bool {
-	if dirName == "" {
-		return false
-	}
-	absDir, err := filepath.Abs(dirName)
-	_, err = os.Stat(absDir)
-	if err != nil {
-		log.Printf("the oss directory %s is not exits,just create it", absDir)
-		os.Mkdir(absDir, 0777)
-	}
-
-	fi, err := os.Stat(absDir)
-	if !fi.IsDir() {
-		log.Errorf("the %s is not a valid oss directory", dirName)
-		return false
-	}
-
-	return true
-}
-
 func main() {
 	registerSignal()
 	defer func() {
@@ -58,6 +40,7 @@ func main() {
 			log.Print("==============EXIT==============")
 		}
 	}()
+
 	cfg := flag.String("c", "oss/cfg.json", "configuration file")
 	//cfg := flag.String("c", "cfg.json", "configuration file") //for debug
 	version := flag.Bool("v", false, "show version")
@@ -75,8 +58,9 @@ func main() {
 		g.InitLog("info")
 	}
 
+	log.Println("OSS Go SDK Version: ", oss.Version)
 	g.Config().OssDirectory = filepath.Clean(g.Config().OssDirectory)
-	if !checkOssDirectory(g.Config().OssDirectory) {
+	if !utils.CheckAndCreate(g.Config().OssDirectory) {
 		log.Error("the oss directory specified in the config is invalid")
 		os.Exit(2)
 	}
@@ -85,6 +69,7 @@ func main() {
 		g.Config().OssDirectory = g.Config().OssDirectory + "/"
 	}
 
+	go syncaliyunoss.SyncWhileStart()
 	if g.Config().Rpc.Enabled {
 		go syncaliyunoss.StartRpcServer(g.Config().Rpc.Port)
 		log.Println("start the rpc server...")

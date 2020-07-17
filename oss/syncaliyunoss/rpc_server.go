@@ -15,13 +15,7 @@ import (
 
 type RpcServer struct{}
 
-type ossInfo struct {
-	StatusCode      int64  `json:"StatusCode"`
-	SecurityToken   string `json:"SecurityToken"`
-	AccessKeyId     string `json:"AccessKeyId"`
-	AccessKeySecret string `json:"AccessKeySecret"`
-	Expiration      string `json:"Expiration"`
-}
+
 
 func (s *RpcServer) SyncOssFile(ctx context.Context, request *AliyunOssRequest) (response *AliyunOssReply, err error) {
 	log.Println("SyncOssFile get the request str is:", request.String())
@@ -38,7 +32,7 @@ func aliyunOssDownload(endpoint, bucket_name, object_name_prefix, file_name, md5
 	uri := g.Config().OssUri
 	req := httplib.Get(uri).SetTimeout(5*time.Second, 30*time.Second)
 
-	var oss_info ossInfo
+	var oss_info g.OssInfo
 	err := req.ToJson(&oss_info)
 	if err != nil {
 		log.Errorf("curl %s failed: %v", uri, err)
