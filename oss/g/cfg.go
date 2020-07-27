@@ -21,8 +21,8 @@ type GlobalConfig struct {
 	OssUri           string     `json:"oss_uri"`
 	Endpoint         string     `json:"endpoint"`
 	BucketName       string     `json:"bucket_name"`
-	ObjectPrefix     string     `json:"object_prefix"`
 	OssDirectory     string     `json:"oss_directory"`
+	ReserveRecent    int        `json:"reserveRecent"`
 	ObjectNamePrefix []string   `json:"objectNamePrefix"`
 	Rpc              *RpcConfig `json:"rpc"`
 }
@@ -50,7 +50,6 @@ func ParseConfig(cfg string) {
 	}
 
 	ConfigFile = cfg
-
 	configContent, err := file.ToTrimString(cfg)
 	if err != nil {
 		log.Fatalln("read config file:", cfg, "fail:", err)

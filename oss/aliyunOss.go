@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"oss/cronoss"
 	"oss/g"
 	"oss/syncaliyunoss"
 	"oss/utils"
@@ -69,7 +70,9 @@ func main() {
 		g.Config().OssDirectory = g.Config().OssDirectory + "/"
 	}
 
-	go syncaliyunoss.SyncWhileStart()
+	go cronoss.SyncOssFilesCron()
+	go cronoss.SyncOssFiles()
+
 	if g.Config().Rpc.Enabled {
 		go syncaliyunoss.StartRpcServer(g.Config().Rpc.Port)
 		log.Println("start the rpc server...")

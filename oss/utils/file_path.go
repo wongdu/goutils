@@ -15,7 +15,7 @@ func CheckAndCreate(dirName string) bool {
 	_, err = os.Stat(absDir)
 	if err != nil {
 		log.Printf("the oss directory %s is not exits,just create it", absDir)
-		os.Mkdir(absDir, 0777)
+		os.MkdirAll(absDir, 0777)
 	}
 
 	fi, err := os.Stat(absDir)
@@ -25,4 +25,33 @@ func CheckAndCreate(dirName string) bool {
 	}
 
 	return true
+}
+
+func FileExists(file string) (bool, error) {
+	_, err := os.Stat(file)
+	if err == nil {
+		return true, nil //文件或者文件夹存在
+	}
+	if os.IsNotExist(err) {
+		return false, nil //不存在
+	}
+	return false, err //不存在，这里的err可以查到具体的错误信息
+}
+
+//判断目录是否存在
+func IsDir(dir string) bool {
+	info, err := os.Stat(dir)
+	if err == nil {
+		return false
+	}
+	return info.IsDir()
+}
+
+//判断文件是否存在
+func IsFile(file string) bool {
+	info, err := os.Stat(file)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
 }
