@@ -3,6 +3,7 @@ package cronoss
 import (
 	"oss/g"
 	"oss/utils"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,19 +19,22 @@ var (
 	ossSyncObjects *SafeMap
 	idTryOssFailed cron.EntryID
 	lock           *sync.Mutex
+	bRetry         bool
 )
 
 func init() {
 	cronPointer = cron.New(cron.WithSeconds())
 	ossSyncObjects = NewSafeMap()
 	lock = new(sync.Mutex)
+	bRetry = false
 }
 func SyncOssFiles() {
 	// spec := *0 0 23 * * *"
-	spec := "10 * * * * *"
+	spec := "* * " + strconv.Itoa(g.Config().SyncShartTime) + " * * *"
 	cronPointer.AddFunc(spec, func() {
 		SyncOssFilesCron()
 	})
+	spec = "* * " + strconv.Itoa(g.Config().ClearShartTime) + " * * *"
 	cronPointer.AddFunc(spec, func() {
 		cleanStale()
 	})
@@ -47,6 +51,11 @@ func SyncOssFilesCron() bool {
 	const layout = "20060102"
 	t := time.Now()
 	strCurrDay := t.Format(layout)
+	ossSyncObjects.Clear()
+	if bRetry {
+		cronPointer.Remove(idTryOssFailed)
+		bRetry = false
+	}
 	if !utils.CheckAndCreate(g.Config().OssDirectory + strCurrDay) {
 		log.Errorf("create the %s directory failed", g.Config().OssDirectory+strCurrDay)
 		return false
@@ -108,17 +117,13 @@ func syncOssWithObjectNamePrefix(currDateDir, objNamePrefix string) bool {
 		}
 
 		for _, object := range lor.Objects {
-			//fmt.Printf("%s %d %s\n", object.LastModified, object.Size, object.Key)
 			strFileFullDir := object.Key
-			//strFileDir := strFileFullDir[strings.Index(strFileFullDir, "/"):strings.LastIndex(strFileFullDir, "/")]
 			strFileDir := strFileFullDir[:strings.LastIndex(strFileFullDir, "/")]
-			//	if strFileDir != "" {
-			//if !utils.CheckAndCreate(currDateDir + "/" + objNamePrefix + strFileDir) {
+
 			if !utils.CheckAndCreate(currDateDir + "/" + strFileDir) {
 				ossSyncObjects.CheckWrite(strFileFullDir, strCurrDay)
 				continue
 			}
-			//	}
 
 			bExists, _ := utils.FileExists(currDateDir + "/" + strFileFullDir)
 			if bExists {
@@ -137,18 +142,22 @@ func syncOssWithObjectNamePrefix(currDateDir, objNamePrefix string) bool {
 		}
 	}
 
-	if ossSyncObjects.Count() > 0 {
+	if ossSyncObjects.Count() > 0 && !bRetry {
+		spec := "* */" + strconv.Itoa(g.Config().retryInterval) + " * * * *"
 		idTryOssFailed, _ = cronPointer.AddFunc("10 * * * * *", func() {
-			trySyncOssFailedFile()
+			retrySyncOssFailedFile()
 		})
+		bRetry = true
 	}
 
 	return true
 }
 
-func trySyncOssFailedFile() {
+func retrySyncOssFailedFile() {
+	log.Println("start retrySyncOssFailedFile ...")
 	if ossSyncObjects.Count() == 0 {
 		cronPointer.Remove(idTryOssFailed)
+		log.Println("remove the retry crontab task ...")
 		return
 	}
 
@@ -177,6 +186,11 @@ func trySyncOssFailedFile() {
 	for tempKey, tempValue := range ossSyncObjects.Items() {
 		objInfo := tempKey.(string)
 		strCurrDay := tempValue.(string)
+		bExists, _ := utils.FileExists(g.Config().OssDirectory + strCurrDay + "/" + objInfo)
+		if bExists {
+			ossSyncObjects.Delete(objInfo)
+			continue
+		}
 		err = bucket.GetObjectToFile(objInfo, g.Config().OssDirectory+strCurrDay+"/"+objInfo)
 		if err == nil {
 			ossSyncObjects.Delete(objInfo)

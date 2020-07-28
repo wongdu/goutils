@@ -80,3 +80,11 @@ func (m *SafeMap) Count() int {
 	defer m.lock.RUnlock()
 	return len(m.bm)
 }
+
+func (m *SafeMap) Clear() {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	for k, _ := range m.bm {
+		delete(m.bm, k)
+	}
+}

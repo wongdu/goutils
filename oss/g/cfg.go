@@ -2,12 +2,13 @@ package g
 
 import (
 	"encoding/json"
-	"log"
+
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	log "github.com/toolkits_/Sirupsen/logrus"
 	"github.com/toolkits_/file"
 )
 
@@ -23,6 +24,9 @@ type GlobalConfig struct {
 	BucketName       string     `json:"bucket_name"`
 	OssDirectory     string     `json:"oss_directory"`
 	ReserveRecent    int        `json:"reserveRecent"`
+	SyncShartTime    int        `json:"syncShartTime"`
+	ClearShartTime   int        `json:"clearShartTime"`
+	RetryInterval    int        `json:"retryInterval"`
 	ObjectNamePrefix []string   `json:"objectNamePrefix"`
 	Rpc              *RpcConfig `json:"rpc"`
 }
