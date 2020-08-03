@@ -2,8 +2,11 @@ syntax = "proto3";
 
 package syncaliyunoss;
 
+import "google/protobuf/empty.proto";
+
 service SyncAliyunOssFile {
 rpc SyncOssFile (AliyunOssRequest) returns (AliyunOssReply) {}
+rpc SyncOssNow (google.protobuf.Empty) returns (AliyunOssReply) {}
 }
 
 message AliyunOssRequest {

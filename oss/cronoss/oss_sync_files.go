@@ -28,11 +28,11 @@ func init() {
 	lock = new(sync.Mutex)
 	bRetry = false
 }
-func SyncOssFiles() {
+func StartSyncOssFiles() {
 	// spec := *0 0 23 * * *"
 	spec := "* * " + strconv.Itoa(g.Config().SyncShartTime) + " * * *"
 	cronPointer.AddFunc(spec, func() {
-		SyncOssFilesCron()
+		SyncOssFiles()
 	})
 	spec = "* * " + strconv.Itoa(g.Config().ClearShartTime) + " * * *"
 	cronPointer.AddFunc(spec, func() {
@@ -44,10 +44,10 @@ func SyncOssFiles() {
 	select {}
 }
 
-func SyncOssFilesCron() bool {
+func SyncOssFiles() bool {
 	lock.Lock()
 	defer lock.Unlock()
-	log.Println("start SyncOssFilesCron ...")
+	log.Println("start SyncOssFiles ...")
 	const layout = "20060102"
 	t := time.Now()
 	strCurrDay := t.Format(layout)
@@ -143,8 +143,8 @@ func syncOssWithObjectNamePrefix(currDateDir, objNamePrefix string) bool {
 	}
 
 	if ossSyncObjects.Count() > 0 && !bRetry {
-		spec := "* */" + strconv.Itoa(g.Config().retryInterval) + " * * * *"
-		idTryOssFailed, _ = cronPointer.AddFunc("10 * * * * *", func() {
+		spec := "* */" + strconv.Itoa(g.Config().RetryInterval) + " * * * *"
+		idTryOssFailed, _ = cronPointer.AddFunc(spec, func() {
 			retrySyncOssFailedFile()
 		})
 		bRetry = true

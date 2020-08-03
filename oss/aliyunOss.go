@@ -42,7 +42,8 @@ func main() {
 		}
 	}()
 
-	cfg := flag.String("c", "oss/cfg.json", "configuration file")
+	//cfg := flag.String("c", "oss/cfg.json", "configuration file")
+	cfg := flag.String("c", "cfg.json", "configuration file")
 	//cfg := flag.String("c", "cfg.json", "configuration file") //for debug
 	version := flag.Bool("v", false, "show version")
 
@@ -70,7 +71,7 @@ func main() {
 		g.Config().OssDirectory = g.Config().OssDirectory + "/"
 	}
 
-	go cronoss.SyncOssFilesCron()
+	go cronoss.StartSyncOssFiles()
 	go cronoss.SyncOssFiles()
 
 	if g.Config().Rpc.Enabled {

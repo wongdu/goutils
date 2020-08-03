@@ -2,12 +2,14 @@ package syncaliyunoss
 
 import (
 	"os"
+	"oss/cronoss"
 	"oss/g"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	"github.com/toolkits_/httplib"
 	log "github.com/toolkits_/logrus"
 	"golang.org/x/net/context"
@@ -23,6 +25,11 @@ func (s *RpcServer) SyncOssFile(ctx context.Context, request *AliyunOssRequest) 
 	}
 	go aliyunOssDownload(request.Endpoint, request.BucketName, request.ObjectNamePrefix, request.FileName, request.Md5SumValue, request.Timestamp)
 	return &AliyunOssReply{Message: "", ErrCode: 0}, nil
+}
+
+func (s *RpcServer) SyncOssNow(ctx context.Context, request *empty.Empty) (response *AliyunOssReply, err error) {
+	go cronoss.SyncOssFiles()
+	return &AliyunOssReply{Message: "receive the sync oss file now notification!", ErrCode: 0}, nil
 }
 
 func aliyunOssDownload(endpoint, bucket_name, object_name_prefix, file_name, md5sum_value string, timestamp int64) {
