@@ -71,7 +71,7 @@ func aliyunOssDownload(endpoint, bucket_name, object_name_prefix, file_name, md5
 	}
 
 	// 下载文件到本地文件。
-	err = bucket.GetObjectToFile(object_name_prefix+file_name, g.Config().OssDirectory+strOssFileDate+"/"+file_name)
+	err = bucket.GetObjectToFile(object_name_prefix+file_name, g.Config().OssDirectory+strOssFileDate+"/"+object_name_prefix+file_name)
 	if err != nil {
 		log.Errorf("get the oss file failed: %v", err)
 		return
