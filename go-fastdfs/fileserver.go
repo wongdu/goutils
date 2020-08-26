@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strconv"
-	//	"strconv"
 	"sync"
 
 	"os"
@@ -45,8 +44,7 @@ var logacc log.LoggerInterface
 var FOLDERS = []string{DATA_DIR, STORE_DIR, CONF_DIR}
 
 var (
-	FileName string
-	ptr      unsafe.Pointer
+	ptr unsafe.Pointer
 )
 
 const (
@@ -88,32 +86,32 @@ const (
 	"是否显示目录": "真假",
 	"show_dir": true
 }
-	
+
 	`
 
 	logConfigStr = `
-<seelog type="asynctimer" asyncinterval="1000" minlevel="trace" maxlevel="error">  
-	<outputs formatid="common">  
-		<buffered formatid="common" size="1048576" flushperiod="1000">  
-			<rollingfile type="size" filename="./log/fileserver.log" maxsize="104857600" maxrolls="10"/>  
+<seelog type="asynctimer" asyncinterval="1000" minlevel="trace" maxlevel="error">
+	<outputs formatid="common">
+		<buffered formatid="common" size="1048576" flushperiod="1000">
+			<rollingfile type="size" filename="./log/fileserver.log" maxsize="104857600" maxrolls="10"/>
 		</buffered>
-	</outputs>  	  
+	</outputs>
 	 <formats>
-		 <format id="common" format="%Date %Time [%LEV] [%File:%Line] [%Func] %Msg%n" />  
-	 </formats>  
+		 <format id="common" format="%Date %Time [%LEV] [%File:%Line] [%Func] %Msg%n" />
+	 </formats>
 </seelog>
 `
 
 	logAccessConfigStr = `
-<seelog type="asynctimer" asyncinterval="1000" minlevel="trace" maxlevel="error">  
-	<outputs formatid="common">  
-		<buffered formatid="common" size="1048576" flushperiod="1000">  
-			<rollingfile type="size" filename="./log/access.log" maxsize="104857600" maxrolls="10"/>  
+<seelog type="asynctimer" asyncinterval="1000" minlevel="trace" maxlevel="error">
+	<outputs formatid="common">
+		<buffered formatid="common" size="1048576" flushperiod="1000">
+			<rollingfile type="size" filename="./log/access.log" maxsize="104857600" maxrolls="10"/>
 		</buffered>
-	</outputs>  	  
+	</outputs>
 	 <formats>
-		 <format id="common" format="%Date %Time [%LEV] [%File:%Line] [%Func] %Msg%n" />  
-	 </formats>  
+		 <format id="common" format="%Date %Time [%LEV] [%File:%Line] [%Func] %Msg%n" />
+	 </formats>
 </seelog>
 `
 )
@@ -242,9 +240,6 @@ func ParseConfig(filePath string) {
 		}
 
 		defer file.Close()
-
-		FileName = filePath
-
 		data, err = ioutil.ReadAll(file)
 		if err != nil {
 			panic(fmt.Sprintln("file path:", filePath, " read all error:", err))
@@ -362,14 +357,11 @@ func (this *Common) RemoveEmptyDir(pathname string) {
 	}()
 
 	handlefunc := func(file_path string, f os.FileInfo, err error) error {
-
 		if f.IsDir() {
-
 			files, _ := ioutil.ReadDir(file_path)
 			if len(files) == 0 && file_path != pathname {
 				os.Remove(file_path)
 			}
-
 		}
 
 		return nil
@@ -379,11 +371,9 @@ func (this *Common) RemoveEmptyDir(pathname string) {
 	if fi.IsDir() {
 		filepath.Walk(pathname, handlefunc)
 	}
-
 }
 
 func (this *Common) GetClientIp(r *http.Request) string {
-
 	client_ip := ""
 	headers := []string{"X_Forwarded_For", "X-Forwarded-For", "X-Real-Ip",
 		"X_Real_Ip", "Remote_Addr", "Remote-Addr"}
@@ -418,16 +408,13 @@ func (this *Server) DownloadFromPeer(peer string, fileInfo *FileInfo) {
 	}
 
 	req := httplib.Get(peer + "/" + Config().Group + "/" + fileInfo.Path + "/" + filename)
-
 	req.SetTimeout(time.Second*5, time.Second*5)
 	if err = req.ToFile(fileInfo.Path + "/" + filename); err != nil {
 		log.Error(err)
 	}
-
 }
 
 func (this *Server) Download(w http.ResponseWriter, r *http.Request) {
-
 	var (
 		err      error
 		pathMd5  string
@@ -439,7 +426,6 @@ func (this *Server) Download(w http.ResponseWriter, r *http.Request) {
 	)
 
 	fullpath = r.RequestURI[len(Config().Group)+2 : len(r.RequestURI)]
-
 	if pathval, err = url.ParseQuery(fullpath); err != nil {
 		log.Error(err)
 	} else {
@@ -457,19 +443,15 @@ func (this *Server) Download(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 		pathMd5 = this.util.MD5(fullpath)
 		for _, peer = range Config().Peers {
-
 			if fileInfo, err = this.checkPeerFileExist(peer, pathMd5); err != nil {
 				log.Error(err)
 				continue
 			}
 			if fileInfo.Md5 != "" {
-
 				go this.DownloadFromPeer(peer, fileInfo)
-
 				http.Redirect(w, r, peer+r.RequestURI, 302)
 				break
 			}
-
 		}
 		return
 	}
@@ -478,7 +460,6 @@ func (this *Server) Download(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("list dir deny"))
 		return
 	}
-
 	log.Info("download:" + r.RequestURI)
 	staticHandler.ServeHTTP(w, r)
 }
@@ -488,7 +469,6 @@ func (this *Server) GetServerURI(r *http.Request) string {
 }
 
 func (this *Server) CheckFileAndSendToPeer(filename string, is_force_upload bool) {
-
 	defer func() {
 		if re := recover(); re != nil {
 			buffer := debug.Stack()
@@ -501,14 +481,11 @@ func (this *Server) CheckFileAndSendToPeer(filename string, is_force_upload bool
 	if filename == "" {
 		filename = DATA_DIR + "/" + time.Now().Format("20060102") + "/" + CONST_Md5_ERROR_FILE_NAME
 	}
-
 	if data, err := ioutil.ReadFile(filename); err == nil {
 		content := string(data)
-
 		lines := strings.Split(content, "\n")
 		for _, line := range lines {
 			cols := strings.Split(line, "|")
-
 			if fileInfo, _ := this.GetFileInfoByMd5(cols[0]); fileInfo != nil && fileInfo.Md5 != "" {
 				if is_force_upload {
 					fileInfo.Peers = []string{}
@@ -516,13 +493,10 @@ func (this *Server) CheckFileAndSendToPeer(filename string, is_force_upload bool
 				this.postFileToPeer(fileInfo, false)
 			}
 		}
-
 	}
-
 }
 
 func (this *Server) postFileToPeer(fileInfo *FileInfo, write_log bool) {
-
 	var (
 		err      error
 		peer     string
@@ -544,7 +518,6 @@ func (this *Server) postFileToPeer(fileInfo *FileInfo, write_log bool) {
 	}()
 
 	for _, peer = range Config().Peers {
-
 		if fileInfo.Peers == nil {
 			fileInfo.Peers = []string{}
 		}
@@ -553,7 +526,6 @@ func (this *Server) postFileToPeer(fileInfo *FileInfo, write_log bool) {
 		}
 
 		filename = fileInfo.Name
-
 		if Config().RenameFile {
 			filename = fileInfo.ReName
 		}
@@ -661,27 +633,21 @@ func (this *Server) GetFileInfoByMd5(md5sum string) (*FileInfo, error) {
 }
 
 func (this *Server) checkPeerFileExist(peer string, md5sum string) (*FileInfo, error) {
-
 	var (
 		err error
 	)
 
 	req := httplib.Get(peer + fmt.Sprintf("/check_file_exist?md5=%s", md5sum))
-
 	req.SetTimeout(time.Second*5, time.Second*5)
-
 	var fileInfo FileInfo
-
 	if err = req.ToJSON(&fileInfo); err == nil {
 		if fileInfo.Md5 == "" {
 			return &FileInfo{}, nil
 		} else {
-
 			return &fileInfo, nil
 		}
 	}
 	return &FileInfo{}, errors.New("file not found")
-
 }
 
 func (this *Server) CheckFileExist(w http.ResponseWriter, r *http.Request) {
@@ -707,20 +673,14 @@ func (this *Server) CheckFileExist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ = json.Marshal(FileInfo{})
-
 	w.Write(data)
-
 }
 
 func (this *Server) Sync(w http.ResponseWriter, r *http.Request) {
-
 	r.ParseForm()
-
 	date := ""
-
 	force := ""
 	is_force_upload := false
-
 	if len(r.Form["force"]) > 0 {
 		force = r.Form["force"][0]
 	}
@@ -737,15 +697,11 @@ func (this *Server) Sync(w http.ResponseWriter, r *http.Request) {
 	}
 	date = strings.Replace(date, ".", "", -1)
 	filename := DATA_DIR + "/" + date + "/" + CONST_Md5_ERROR_FILE_NAME
-
 	if this.util.FileExists(filename) {
-
 		go this.CheckFileAndSendToPeer(filename, is_force_upload)
 	}
 	filename = DATA_DIR + "/" + date + "/" + CONST_FILE_Md5_FILE_NAME
-
 	if this.util.FileExists(filename) {
-
 		go this.CheckFileAndSendToPeer(filename, is_force_upload)
 	}
 	w.Write([]byte("job is running"))
@@ -753,9 +709,8 @@ func (this *Server) Sync(w http.ResponseWriter, r *http.Request) {
 
 func (this *Server) GetFileInfoFromLevelDB(key string) (*FileInfo, error) {
 	var (
-		err  error
-		data []byte
-
+		err      error
+		data     []byte
 		fileInfo FileInfo
 	)
 
@@ -767,28 +722,22 @@ func (this *Server) GetFileInfoFromLevelDB(key string) (*FileInfo, error) {
 		return nil, err
 	}
 	return &fileInfo, nil
-
 }
 
 func (this *Server) SaveStat() {
-
 	stat := statMap.Get()
 	if v, ok := stat[CONST_STAT_FILE_TOTAL_SIZE_KEY]; ok {
 		switch v.(type) {
 		case int64:
 			if v.(int64) > 0 {
-
 				if data, err := json.Marshal(stat); err != nil {
 					log.Error(err)
 				} else {
 					this.util.WriteBinFile(CONST_STAT_FILE_NAME, data)
 				}
-
 			}
 		}
-
 	}
-
 }
 
 func (this *Server) SaveFileInfoToLevelDB(key string, fileInfo *FileInfo) (*FileInfo, error) {
@@ -798,17 +747,13 @@ func (this *Server) SaveFileInfoToLevelDB(key string, fileInfo *FileInfo) (*File
 	)
 
 	if data, err = json.Marshal(fileInfo); err != nil {
-
 		return fileInfo, err
-
 	}
 
 	if err = this.db.Put([]byte(key), data, nil); err != nil {
 		return fileInfo, err
 	}
-
 	return fileInfo, nil
-
 }
 
 func (this *Server) IsPeer(r *http.Request) bool {
@@ -1077,7 +1022,6 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 		}
 
 		UploadToPeer := func(fileInfo *FileInfo) {
-
 			var (
 				err      error
 				pathMd5  string
@@ -1089,7 +1033,6 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 				log.Error(err)
 				log.Error(fmt.Sprintf("UploadToPeer fail: %v", fileInfo))
 				return
-
 			}
 
 			if err = this.db.Put([]byte(fileInfo.Md5), data, nil); err != nil {
@@ -1097,25 +1040,19 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fullpath = fileInfo.Path + "/" + fileInfo.Name
-
 			if Config().RenameFile {
 				fullpath = fileInfo.Path + "/" + fileInfo.ReName
 			}
 
 			pathMd5 = this.util.MD5(fullpath)
-
 			if err = this.db.Put([]byte(pathMd5), data, nil); err != nil {
 				log.Error(err)
 			}
-
 			go this.postFileToPeer(fileInfo, true)
-
 		}
 
 		UploadToPeer(&fileInfo)
-
 		outname = fileInfo.Name
-
 		if Config().RenameFile {
 			outname = fileInfo.ReName
 		}
@@ -1129,27 +1066,22 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 		}
 
 		this.SaveStat()
-
 		this.SaveFileMd5Log(&fileInfo, CONST_FILE_Md5_FILE_NAME)
-
 		download_url := fmt.Sprintf("http://%s/%s", r.Host, Config().Group+"/"+fileInfo.Path+"/"+outname)
 		if Config().DownloadDomain != "" {
 			download_url = fmt.Sprintf("http://%s/%s", Config().DownloadDomain, Config().Group+"/"+fileInfo.Path+"/"+outname)
 		}
 		w.Write([]byte(download_url))
 		return
-
 	} else {
 		w.Write([]byte("(error)fail,please use post method"))
 		return
 	}
-
 }
 
 func (this *Server) BenchMark(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
 	batch := new(leveldb.Batch)
-
 	for i := 0; i < 100000000; i++ {
 		f := FileInfo{}
 		f.Peers = []string{"http://192.168.0.1", "http://192.168.2.5"}
@@ -1159,14 +1091,11 @@ func (this *Server) BenchMark(w http.ResponseWriter, r *http.Request) {
 		f.Name = s
 		f.Md5 = s
 
-		//		server.SaveFileInfoToLevelDB(s, &f)
-
 		if data, err := json.Marshal(&f); err == nil {
 			batch.Put([]byte(s), data)
 		}
 
 		if i%10000 == 0 {
-
 			if batch.Len() > 0 {
 				server.db.Write(batch, nil)
 				//				batch = new(leveldb.Batch)
@@ -1184,7 +1113,6 @@ func (this *Server) BenchMark(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(time.Since(t).String())
 }
 func (this *Server) Stat(w http.ResponseWriter, r *http.Request) {
-
 	if this.util.FileExists(CONST_STAT_FILE_NAME) {
 		if data, err := this.util.ReadBinFile(CONST_STAT_FILE_NAME); err != nil {
 			w.Write([]byte(err.Error()))
@@ -1192,7 +1120,6 @@ func (this *Server) Stat(w http.ResponseWriter, r *http.Request) {
 			w.Write(data)
 		}
 	}
-
 }
 
 func (this *Server) Index(w http.ResponseWriter, r *http.Request) {
@@ -1221,19 +1148,14 @@ func init() {
 		os.Mkdir(folder, 0777)
 	}
 	flag.Parse()
-
 	if !util.FileExists(CONST_CONF_FILE_NAME) {
-
 		peer := "http://" + util.GetPulicIP() + ":8080"
-
 		cfg := fmt.Sprintf(cfgJson, peer)
-
 		util.WriteFile(CONST_CONF_FILE_NAME, cfg)
 	}
 
 	if logger, err := log.LoggerFromConfigAsBytes([]byte(logConfigStr)); err != nil {
 		panic(err)
-
 	} else {
 		log.ReplaceLogger(logger)
 	}
@@ -1247,9 +1169,7 @@ func init() {
 	}
 
 	ParseConfig(CONST_CONF_FILE_NAME)
-
 	staticHandler = http.StripPrefix("/"+Config().Group+"/"+STORE_DIR+"/", http.FileServer(http.Dir(STORE_DIR)))
-
 	initComponent()
 }
 
@@ -1288,7 +1208,6 @@ func initComponent() {
 		if data, err = util.ReadBinFile(CONST_STAT_FILE_NAME); err != nil {
 			log.Error(err)
 		} else {
-
 			if err = json.Unmarshal(data, &stat); err != nil {
 				log.Error(err)
 			} else {
@@ -1296,24 +1215,18 @@ func initComponent() {
 					switch v.(type) {
 					case float64:
 						vv := strings.Split(fmt.Sprintf("%f", v), ".")[0]
-
 						if count, err = strconv.ParseInt(vv, 10, 64); err != nil {
 							log.Error(err)
 						} else {
 							statMap.Put(k, count)
 						}
-
 					default:
 						statMap.Put(k, v)
-
 					}
-
 				}
 			}
 		}
-
 	}
-
 }
 
 type HttpHandler struct {
@@ -1351,7 +1264,6 @@ func (HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-
 	if !util.FileExists(STORE_DIR) {
 		os.Mkdir(STORE_DIR, 0777)
 	}
@@ -1376,5 +1288,4 @@ func main() {
 	err := http.ListenAndServe(Config().Addr, new(HttpHandler))
 	log.Error(err)
 	fmt.Println(err)
-
 }
