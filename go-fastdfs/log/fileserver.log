@@ -1,0 +1,8 @@
+2020-08-19 11:34:08 [INF] [fileserver.go:1243] [main.init.0] succes init log access
+2020-08-19 11:35:12 [INF] [fileserver.go:1243] [main.init.0] succes init log access
+2020-08-19 11:35:12 [INF] [fileserver.go:261] [main.ParseConfig] {:8080 [http://192.168.11.117:8080] group1 false true 120 true  true}
+2020-08-19 11:35:12 [INF] [fileserver.go:264] [main.ParseConfig] config parse success
+2020-08-26 19:18:54 [INF] [fileserver.go:1243] [main.init.0] succes init log access
+2020-08-26 19:19:22 [INF] [fileserver.go:1243] [main.init.0] succes init log access
+2020-08-26 19:19:22 [INF] [fileserver.go:261] [main.ParseConfig] {:8080 [http://192.168.11.117:8080] group1 false true 120 true  true}
+2020-08-26 19:19:22 [INF] [fileserver.go:264] [main.ParseConfig] config parse success
