@@ -29,16 +29,14 @@ import (
 	"unsafe"
 
 	"github.com/astaxie/beego/httplib"
-	"github.com/syndtr/goleveldb/leveldb"
-
 	log "github.com/sjqzhang/seelog"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 var staticHandler http.Handler
 var util = &Common{}
 var server = &Server{}
 var statMap = &CommonMap{m: make(map[string]interface{})}
-
 var logacc log.LoggerInterface
 
 var FOLDERS = []string{DATA_DIR, STORE_DIR, CONF_DIR}
@@ -49,23 +47,17 @@ var (
 
 const (
 	STORE_DIR = "files"
-
-	CONF_DIR = "conf"
-
-	DATA_DIR = "data"
+	CONF_DIR  = "conf"
+	DATA_DIR  = "data"
 
 	CONST_LEVELDB_FILE_NAME = DATA_DIR + "/fileserver.db"
+	CONST_STAT_FILE_NAME    = DATA_DIR + "/stat.json"
+	CONST_CONF_FILE_NAME    = CONF_DIR + "/cfg.json"
 
-	CONST_STAT_FILE_NAME = DATA_DIR + "/stat.json"
-
-	CONST_CONF_FILE_NAME = CONF_DIR + "/cfg.json"
-
-	CONST_STAT_FILE_COUNT_KEY = "fileCount"
-
+	CONST_STAT_FILE_COUNT_KEY      = "fileCount"
 	CONST_STAT_FILE_TOTAL_SIZE_KEY = "totalSize"
-
-	CONST_Md5_ERROR_FILE_NAME = "errors.md5"
-	CONST_FILE_Md5_FILE_NAME  = "files.md5"
+	CONST_Md5_ERROR_FILE_NAME      = "errors.md5"
+	CONST_FILE_Md5_FILE_NAME       = "files.md5"
 
 	cfgJson = `{
 	"绑定端号": "端口",
@@ -178,13 +170,11 @@ func (s *CommonMap) AddCount(key string, count int) {
 func (s *CommonMap) AddCountInt64(key string, count int64) {
 	s.Lock()
 	defer s.Unlock()
-
 	if _v, ok := s.m[key]; ok {
 		v := _v.(int64)
 		v = v + count
 		s.m[key] = v
 	} else {
-
 		s.m[key] = count
 	}
 }
@@ -197,9 +187,7 @@ func (s *CommonMap) Add(key string) {
 		v = v + 1
 		s.m[key] = v
 	} else {
-
 		s.m[key] = 1
-
 	}
 }
 
@@ -277,7 +265,6 @@ func (this *Common) GetPulicIP() string {
 }
 
 func (this *Common) MD5(str string) string {
-
 	md := md5.New()
 	md.Write([]byte(str))
 	return fmt.Sprintf("%x", md.Sum(nil))
@@ -390,7 +377,6 @@ func (this *Common) GetClientIp(r *http.Request) string {
 		client_ip = clients[0]
 	}
 	return client_ip
-
 }
 
 func (this *Server) DownloadFromPeer(peer string, fileInfo *FileInfo) {
@@ -542,13 +528,11 @@ func (this *Server) postFileToPeer(fileInfo *FileInfo, write_log bool) {
 		}
 
 		if info, _ = this.checkPeerFileExist(peer, fileInfo.Md5); info.Md5 != "" {
-
 			continue
 		}
 
 		postURL = fmt.Sprintf("%s/%s", peer, "syncfile")
 		b := httplib.Post(postURL)
-
 		b.SetTimeout(time.Second*5, time.Second*5)
 		b.Header("Sync-Path", fileInfo.Path)
 		b.Param("name", filename)
@@ -564,25 +548,20 @@ func (this *Server) postFileToPeer(fileInfo *FileInfo, write_log bool) {
 				this.SaveFileMd5Log(fileInfo, CONST_Md5_ERROR_FILE_NAME)
 			}
 		} else {
-
 			log.Info(result)
-
 			if !this.util.Contains(peer, fileInfo.Peers) {
-				fileInfo.Peers = append(fileInfo.Peers, peer)
+				fileInfo.Peers = append(fileInfo.Peers, peer) //更新本地文件所保留的节点集
 				if data, err = json.Marshal(fileInfo); err != nil {
 					log.Error(err)
 					return
 				}
 				this.db.Put([]byte(fileInfo.Md5), data, nil)
 			}
-
 		}
 		if err != nil {
 			log.Error(err)
 		}
-
 	}
-
 }
 
 func (this *Server) SaveFileMd5Log(fileInfo *FileInfo, filename string) {
@@ -590,13 +569,11 @@ func (this *Server) SaveFileMd5Log(fileInfo *FileInfo, filename string) {
 		err     error
 		msg     string
 		tmpFile *os.File
-
 		logpath string
 		outname string
 	)
 
 	outname = fileInfo.Name
-
 	if fileInfo.ReName != "" {
 		outname = fileInfo.ReName
 	}
@@ -665,7 +642,6 @@ func (this *Server) CheckFileExist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if fileInfo, err = this.GetFileInfoByMd5(md5sum); fileInfo != nil {
-
 		if data, err = json.Marshal(fileInfo); err == nil {
 			w.Write(data)
 			return
@@ -713,11 +689,9 @@ func (this *Server) GetFileInfoFromLevelDB(key string) (*FileInfo, error) {
 		data     []byte
 		fileInfo FileInfo
 	)
-
 	if data, err = this.db.Get([]byte(key), nil); err != nil {
 		return nil, err
 	}
-
 	if err = json.Unmarshal(data, &fileInfo); err != nil {
 		return nil, err
 	}
@@ -745,11 +719,9 @@ func (this *Server) SaveFileInfoToLevelDB(key string, fileInfo *FileInfo) (*File
 		err  error
 		data []byte
 	)
-
 	if data, err = json.Marshal(fileInfo); err != nil {
 		return fileInfo, err
 	}
-
 	if err = this.db.Put([]byte(key), data, nil); err != nil {
 		return fileInfo, err
 	}
@@ -765,7 +737,6 @@ func (this *Server) IsPeer(r *http.Request) bool {
 	ip = this.util.GetClientIp(r)
 	ip = "http://" + ip
 	bflag = false
-
 	for _, peer = range Config().Peers {
 		if strings.HasPrefix(peer, ip) {
 			bflag = true
@@ -786,8 +757,9 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 		uploadFile multipart.File
 	)
 
+	//20200828_1100:只有是服务节点过来的请求才被处理
 	if !this.IsPeer(r) {
-		log.Error(fmt.Sprintf(" not is peer,ip:%s", this.util.GetClientIp(r)))
+		log.Error(fmt.Sprintf("not is peer,ip:%s", this.util.GetClientIp(r)))
 		return
 	}
 
@@ -801,7 +773,6 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fileInfo.Peers = []string{}
-
 		defer uploadFile.Close()
 
 		if v, _ := this.GetFileInfoFromLevelDB(fileInfo.Md5); v != nil && v.Md5 != "" {
@@ -809,17 +780,13 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 			if v.ReName != "" {
 				outname = v.ReName
 			}
-
 			download_url := fmt.Sprintf("http://%s/%s", r.Host, Config().Group+"/"+v.Path+"/"+outname)
 			w.Write([]byte(download_url))
-
 			return
 		}
 
 		os.MkdirAll(fileInfo.Path, 0777)
-
 		outPath = fileInfo.Path + "/" + fileInfo.Name
-
 		if this.util.FileExists(outPath) {
 			if tmpFile, err = os.Open(outPath); err != nil {
 				log.Error(err)
@@ -839,9 +806,7 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
-
 		defer tmpFile.Close()
-
 		if _, err = io.Copy(tmpFile, uploadFile); err != nil {
 			w.Write([]byte(err.Error()))
 			log.Error(err)
@@ -852,8 +817,8 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 			tmpFile.Close()
 			os.Remove(outPath)
 			return
-
 		}
+
 		if fi, err = os.Stat(outPath); err != nil {
 			log.Error(err)
 		} else {
@@ -873,20 +838,14 @@ func (this *Server) SyncFile(w http.ResponseWriter, r *http.Request) {
 		}
 
 		this.SaveFileMd5Log(&fileInfo, CONST_FILE_Md5_FILE_NAME)
-
 		download_url := fmt.Sprintf("http://%s/%s", r.Host, Config().Group+"/"+fileInfo.Path+"/"+fileInfo.Name)
 		w.Write([]byte(download_url))
-
 	}
-
 }
 
 func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
-
 	var (
-		err error
-
-		//		pathname     string
+		err          error
 		outname      string
 		md5sum       string
 		fileInfo     FileInfo
@@ -894,10 +853,6 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 		uploadHeader *multipart.FileHeader
 	)
 	if r.Method == "POST" {
-		//		name := r.PostFormValue("name")
-
-		//		fileInfo.Path = r.Header.Get("Sync-Path")
-
 		if Config().EnableCustomPath {
 			fileInfo.Path = r.PostFormValue("path")
 		}
@@ -922,17 +877,13 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			)
 
 			defer file.Close()
-
 			fileInfo.Name = header.Filename
-
 			if Config().RenameFile {
 				fileInfo.ReName = this.util.MD5(this.util.GetUUID()) + path.Ext(fileInfo.Name)
 			}
 
 			folder = time.Now().Format("20060102/15/04")
-
 			folder = fmt.Sprintf(STORE_DIR+"/%s", folder)
-
 			if fileInfo.Path != "" {
 				if strings.HasPrefix(fileInfo.Path, STORE_DIR) {
 					folder = fileInfo.Path
@@ -944,7 +895,6 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			if !util.FileExists(folder) {
 				os.MkdirAll(folder, 0777)
 			}
-
 			outPath := fmt.Sprintf(folder+"/%s", fileInfo.Name)
 			if Config().RenameFile {
 				outPath = fmt.Sprintf(folder+"/%s", fileInfo.ReName)
@@ -961,17 +911,14 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Info(fmt.Sprintf("upload: %s", outPath))
-
 			if outFile, err = os.Create(outPath); err != nil {
 				return fileInfo, err
 			}
 
 			defer outFile.Close()
-
 			if err != nil {
 				log.Error(err)
 				return fileInfo, errors.New("(error)fail," + err.Error())
-
 			}
 
 			if _, err = io.Copy(outFile, file); err != nil {
@@ -982,17 +929,12 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			v := util.GetFileMd5(outFile)
 			fileInfo.Md5 = v
 			fileInfo.Path = folder
-
 			fileInfo.Peers = append(fileInfo.Peers, fmt.Sprintf("http://%s", r.Host))
-
 			return fileInfo, nil
-
 		}
 
 		SaveUploadFile(uploadFile, uploadHeader, &fileInfo)
-
 		if v, _ := this.GetFileInfoFromLevelDB(fileInfo.Md5); v != nil && v.Md5 != "" {
-
 			if Config().RenameFile {
 				os.Remove(fileInfo.Path + "/" + fileInfo.ReName)
 			} else {
@@ -1007,7 +949,6 @@ func (this *Server) Upload(w http.ResponseWriter, r *http.Request) {
 				download_url = fmt.Sprintf("http://%s/%s", Config().DownloadDomain, Config().Group+"/"+v.Path+"/"+outname)
 			}
 			w.Write([]byte(download_url))
-
 			return
 		}
 
@@ -1244,7 +1185,6 @@ func (HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			status_code,
 			req.RequestURI,
 		)
-
 		logacc.Info(logStr)
 	}(time.Now())
 
@@ -1256,7 +1196,6 @@ func (HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			buff := debug.Stack()
 			log.Error(err)
 			log.Error(string(buff))
-
 		}
 	}()
 
